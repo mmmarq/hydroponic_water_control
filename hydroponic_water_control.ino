@@ -19,7 +19,7 @@ const byte YELLOWLED = 5;                           // set digital BLUE led pin 
 const byte REDLED = 6;                              // set digital RED led pin - no water flow detected
 const byte PUMPPIN = 3;                             // set digital water pump pin
 const byte WATERSENSORPIN = 2;                      // water sensor HALL effect pin - Uno, Nano, Mini, other 328-based = Pin 2, 3
-const int MINLIGHTLEVEL = 230;                      // set minimum light level to determine if it is day or night
+const int MINLIGHTLEVEL = 80;                       // set minimum light level to determine if it is day or night
 const boolean DEBUG = true;                         // enable or disable debug messages
 
 // Interrupt is called once a millisecond, looks for any pulses from the water sensor!
@@ -110,7 +110,16 @@ void loop() {
       digitalWrite(REDLED,HIGH);                              // if water flow was not detected, turn RED led ON
     }
   }
-  //delay(5000);                                         
+  myDelay(1000);                                              // delay without delay function due HW interruption
+  if (DEBUG) Serial.print("Water flow counter: ");
+  if (DEBUG) Serial.println(waterSensorReading);
+}
+
+void myDelay(unsigned long mSec){
+  unsigned long locMillis = millis();
+  while ((millis() - locMillis) < mSec){
+    // do nothing
+  }
 }
 
 boolean isNightTime(){                                        // function to check if it is night time based on env light level
