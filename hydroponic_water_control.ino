@@ -18,9 +18,12 @@ const byte GREENLED = 4;                            // set digital GREEN led pin
 const byte YELLOWLED = 5;                           // set digital BLUE led pin - pump is on
 const byte REDLED = 6;                              // set digital RED led pin - no water flow detected
 const byte PUMPPIN = 3;                             // set digital water pump pin
+const byte TBUTTONPIN = 8;                          // set digital turbo mode pin
+const byte TLEDPIN = 9;                             // set digital turbo mode led pin
 const byte WATERSENSORPIN = 2;                      // water sensor HALL effect pin - Uno, Nano, Mini, other 328-based = Pin 2, 3
 const int MINLIGHTLEVEL = 80;                       // set minimum light level to determine if it is day or night
 const boolean DEBUG = true;                         // enable or disable debug messages
+unsigned long turboDiv = 1;                         // define turbo division factor
 
 // Interrupt is called once a millisecond, looks for any pulses from the water sensor!
 // https://github.com/adafruit/Adafruit-Flow-Meter
@@ -56,6 +59,9 @@ void setup() {
   pinMode(YELLOWLED, OUTPUT);                                 // set BLUE led pin configuration
   pinMode(REDLED, OUTPUT);                                    // set RED led pin configuration
   pinMode(PUMPPIN, OUTPUT);                                   // set PUMP pin configuration
+  pinMode(TBUTTONPIN,INPUT);                                  // set Turbo button pin configuration
+  pinMode(TLEDPIN,OUTPUT);                                    // set Turbo led pin configuration
+  digitalWrite(TLEDPIN,LOW);                                  // set Turbo led status
   digitalWrite(PUMPPIN,HIGH);                                 // set water pump off
   pinMode(WATERSENSORPIN, INPUT);                             // set water pump pin configuration
   digitalWrite(WATERSENSORPIN, LOW);                          // turn water pump on
@@ -67,6 +73,13 @@ void setup() {
 
 void loop() {
   currTime = millis();                                        // read current time in milliseconds since system is UP
+  if (digitalRead(TBUTTONPIN)){                               // check if turbo mode is on
+    digitalWrite(TLEDPIN,HIGH);                               // if yes, turn turbo led on
+    turboDiv = 2;                                             // decrease pump off interval in 50%
+  }else{                                                      // if turbo mode is off
+    digitalWrite(TLEDPIN,LOW);                                // turn turbo led off
+    turboDiv = 1;                                             // keep pump off interval as defined
+  }
   if (currTime < prevTime) currTime = prevTime;               // check for currTime overflow (after aprox. 50 days);
   nightTime = isNightTime();                                  // check if it is night time
   setGreenLedStatus();                                        // set green led status
@@ -92,7 +105,7 @@ void loop() {
         prevTime = currTime;                                  // store last state change update
       }
     }else{                                                    // check if current pump state is OFF
-      if ((currTime - prevTime) >= PUMPOFFDAYINTERVAL){       // check if it is time to turn pump ON 
+      if ((currTime - prevTime) >= (PUMPOFFDAYINTERVAL / turboDiv)){ // check if it is time to turn pump ON 
         if (DEBUG) Serial.println("Its time to start water flow...");
         newBumpState = true;                                  // set new pump status to ON
         prevTime = currTime;                                  // store last state change update
